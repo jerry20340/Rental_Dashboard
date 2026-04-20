@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAI 房產儀表板 V2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --dg1:#07201200; --bg:#0b1f12; --bg2:#0f2918; --bg3:#132e1c; --bg4:#1a3d26;
+    --bg5:#1f4d2f; --line:#2a5c3a; --line2:#356e48;
+    --acc:#4ee07a; --acc2:#27c057; --acc3:#8ff0aa;
+    --muted:#4a7a5a; --dim:#2e5a3e; --txt:#c5e8d0; --txt2:#8bbf9a;
+    --warn:#f0c040; --danger:#e05555; --info:#40b0f0;
+    --font-main:'Noto Sans TC',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--txt);font-family:var(--font-main);font-size:13px;min-height:100vh;}
+
+  /* ── HEADER ── */
+  .header{padding:18px 20px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#0d2616 0%,var(--bg) 100%);}
+  .header-title{font-family:var(--font-mono);font-size:15px;color:var(--acc);letter-spacing:2px;text-transform:uppercase;}
+  .header-sub{font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
+  .header-badge{font-family:var(--font-mono);font-size:10px;color:var(--acc2);border:1px solid var(--line2);border-radius:4px;padding:3px 8px;letter-spacing:1px;}
+
+  /* ── LAYOUT ── */
+  .main{padding:14px 16px;display:flex;flex-direction:column;gap:14px;}
+
+  /* ── PROPS ROW ── */
+  .props-row{display:grid;grid-template-columns:1fr 2.2fr 0.9fr 0.9fr;gap:10px;}
+
+  /* ── PROPERTY BLOCK ── */
+  .prop-block{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 9px;display:flex;flex-direction:column;gap:0;}
+  .prop-title{font-family:var(--font-mono);font-size:11px;color:var(--acc);letter-spacing:1px;text-align:center;padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:8px;}
+  .prop-meta{font-size:9px;color:var(--muted);text-align:center;margin-bottom:6px;letter-spacing:0.5px;}
+
+  /* ── FLOOR ROWS ── */
+  .floors-col{display:flex;flex-direction:column;gap:3px;}
+  .floor-row{display:flex;align-items:center;gap:5px;background:var(--bg3);border-radius:5px;padding:5px 6px;border-left:2px solid transparent;transition:all 0.2s;}
+  .floor-row.rented{border-left-color:var(--acc);}
+  .floor-row.vacant{border-left-color:var(--muted);opacity:0.7;}
+  .floor-label{font-family:var(--font-mono);font-size:10px;color:var(--txt2);min-width:28px;}
+  .floor-info{flex:1;font-size:10px;color:var(--muted);}
+  .toggle-btn{font-size:9px;padding:2px 7px;border-radius:20px;border:1px solid;cursor:pointer;white-space:nowrap;font-weight:500;transition:all 0.15s;font-family:var(--font-mono);}
+  .toggle-btn.on{background:var(--bg5);border-color:var(--acc2);color:var(--acc3);}
+  .toggle-btn.off{background:var(--bg2);border-color:var(--muted);color:var(--muted);}
+  .floor-row-multi{flex-direction:column;align-items:flex-start;gap:4px;}
+  .floor-row-header{display:flex;align-items:center;gap:5px;width:100%;}
+
+  /* ── CHIPS ── */
+  .room-chips{display:flex;flex-wrap:wrap;gap:3px;width:100%;}
+  .chip{font-size:9px;padding:2px 6px;border-radius:10px;border:1px solid;cursor:pointer;transition:all 0.15s;font-family:var(--font-mono);}
+  .chip.on{border-color:var(--acc2);background:var(--bg4);color:var(--acc3);}
+  .chip.off{border-color:var(--dim);background:transparent;color:var(--muted);}
+
+  /* ── PARKING ── */
+  .parking-row{margin-top:7px;display:flex;flex-direction:column;gap:3px;padding-top:7px;border-top:1px solid var(--line);}
+  .park-slot{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--txt2);}
+  .park-icon{width:22px;height:14px;border:1px solid;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;font-family:var(--font-mono);}
+  .park-icon.on{border-color:var(--acc2);background:var(--bg4);color:var(--acc);}
+  .park-icon.off{border-color:var(--dim);background:transparent;color:var(--muted);}
+  .park-toggle{font-size:9px;padding:1px 6px;border-radius:12px;border:1px solid;cursor:pointer;font-family:var(--font-mono);}
+  .park-toggle.on{background:var(--bg5);border-color:var(--acc2);color:var(--acc3);}
+  .park-toggle.off{background:transparent;border-color:var(--dim);color:var(--muted);}
+
+  /* ── INCOME SUMMARY ── */
+  .income-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .sum-card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:center;}
+  .sum-card.highlight{border-color:var(--acc2);background:linear-gradient(135deg,var(--bg3),var(--bg2));}
+  .sum-label{font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:5px;font-family:var(--font-mono);text-transform:uppercase;}
+  .sum-val{font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--acc);}
+  .sum-val.danger{color:var(--danger);}
+  .sum-val.profit{color:var(--acc3);}
+  .sum-unit{font-size:10px;color:var(--muted);margin-top:2px;}
+
+  /* ── TAX SECTION ── */
+  .tax-section{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .tax-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .tax-title{font-family:var(--font-mono);font-size:12px;color:var(--acc);letter-spacing:2px;text-transform:uppercase;}
+  .tax-subtitle{font-size:10px;color:var(--muted);}
+  .tax-toggle-btn{font-size:10px;padding:3px 10px;border-radius:20px;border:1px solid var(--line2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:var(--font-mono);}
+  .tax-toggle-btn:hover{border-color:var(--acc2);color:var(--acc3);}
+
+  .tax-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .tax-card{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
+  .tax-card-title{font-size:10px;color:var(--acc2);margin-bottom:6px;font-family:var(--font-mono);letter-spacing:1px;}
+  .tax-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--line);font-size:10px;}
+  .tax-row:last-child{border-bottom:none;}
+  .tax-row-label{color:var(--txt2);}
+  .tax-row-val{font-family:var(--font-mono);color:var(--txt);}
+  .tax-row-val.warn{color:var(--warn);}
+  .tax-total{margin-top:6px;padding-top:6px;border-top:1px solid var(--line2);display:flex;justify-content:space-between;font-size:11px;font-weight:500;}
+  .tax-total-label{color:var(--muted);}
+  .tax-total-val{font-family:var(--font-mono);color:var(--danger);}
+
+  /* ── PROFIT BAR ── */
+  .profit-section{background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1px solid var(--acc2);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:20px;}
+  .profit-equation{display:flex;align-items:center;gap:12px;flex:1;flex-wrap:wrap;}
+  .eq-block{text-align:center;}
+  .eq-label{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+  .eq-val{font-family:var(--font-mono);font-size:16px;font-weight:600;}
+  .eq-val.income{color:var(--acc);}
+  .eq-val.tax{color:var(--danger);}
+  .eq-val.profit{color:var(--acc3);}
+  .eq-op{font-family:var(--font-mono);font-size:20px;color:var(--muted);}
+  .eq-rate{font-size:9px;color:var(--txt2);font-family:var(--font-mono);margin-top:2px;}
+
+  /* ── PARAMS PANEL ── */
+  .params-section{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;}
+  .params-header{font-family:var(--font-mono);font-size:11px;color:var(--acc);letter-spacing:2px;margin-bottom:10px;display:flex;align-items:center;gap:8px;cursor:pointer;}
+  .params-header::after{content:'▸';font-size:10px;color:var(--muted);transition:transform 0.2s;}
+  .params-header.open::after{transform:rotate(90deg);}
+  .params-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .param-item{display:flex;flex-direction:column;gap:3px;}
+  .param-label{font-size:9px;color:var(--muted);letter-spacing:0.5px;}
+  .param-input{background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:4px 7px;color:var(--txt);font-family:var(--font-mono);font-size:11px;width:100%;outline:none;transition:border-color 0.2s;}
+  .param-input:focus{border-color:var(--acc2);}
+  .param-input::-webkit-inner-spin-button{opacity:0.4;}
+
+  /* ── NOTE ── */
+  .note-bar{font-size:9px;color:var(--muted);padding:8px 12px;background:var(--bg3);border-radius:6px;border-left:2px solid var(--line2);line-height:1.6;}
+  .note-bar b{color:var(--txt2);}
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">KAI ESTATE DASHBOARD</div>
+    <div class="header-sub">房產租賃管理系統 · 稅務試算</div>
+  </div>
+  <div class="header-badge">V2.0 · 2025</div>
+</div>
+
+<div class="main">
+
+  <!-- ── PROPS ── -->
+  <div class="props-row" id="props-row"></div>
+
+  <!-- ── INCOME SUMMARY ── -->
+  <div class="income-bar" id="income-bar"></div>
+
+  <!-- ── TAX SECTION ── -->
+  <div class="tax-section">
+    <div class="tax-header">
+      <div>
+        <div class="tax-title">TAX ESTIMATE · 稅務試算</div>
+        <div class="tax-subtitle">基於誠實申報租賃所得 · 囤房稅2.0適用</div>
+      </div>
+      <button class="tax-toggle-btn" onclick="toggleTaxDetail()">展開明細 ▾</button>
+    </div>
+    <div id="tax-detail" style="display:none;margin-bottom:12px;">
+      <div class="tax-grid" id="tax-grid"></div>
+    </div>
+    <div id="profit-section"></div>
+  </div>
+
+  <!-- ── PARAMS ── -->
+  <div class="params-section">
+    <div class="params-header" id="params-toggle" onclick="toggleParams()">PARAMS · 稅務參數（點擊展開調整）</div>
+    <div id="params-body" style="display:none;">
+      <div class="params-grid" id="params-grid"></div>
+      <div style="margin-top:8px;">
+        <div class="note-bar">
+          <b>房屋稅</b> = 房屋評定現值 × 路段率 × 稅率（出租誠申 1.5%~2.4%）｜
+          <b>地價稅</b> = 公告地價 × 面積(m²) × 持分 × 累進稅率（一般 1%~5.5%）｜
+          <b>租賃所得稅</b> = 年租金 × (1-43%必要費用) × 綜所稅率（預設20%）｜
+          以上為估算參考，實際金額依稅務機關核定為準。
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+const state = {
+  興安國宅: {
+    suites: [{ id:"套房1", rent:19000, rented:false }],
+    rooms: [
+      { id:"雅房1", rent:13000, rented:false },
+      { id:"雅房2", rent:10000, rented:false },
+      { id:"雅房3", rent:11000, rented:false }
+    ],
+    parking: [{ id:"P1", rent:4000, rented:false }]
+  },
+  愛買嘉年華: {
+    floors: [
+      { f:"1F", type:"整層", rent:60000, rented:true, parking:[{rent:2000,rented:true}] },
+      { f:"2F", type:"分租", suites:[{id:"套房1",rent:11500,rented:true}], rooms:[{id:"雅房1",rent:8500,rented:true},{id:"雅房2",rent:8500,rented:true},{id:"雅房3",rent:8500,rented:true}], parking:[{rent:2000,rented:true}] },
+      { f:"3F", type:"分租", suites:[{id:"套房1",rent:11500,rented:true}], rooms:[{id:"雅房1",rent:8500,rented:true},{id:"雅房2",rent:8500,rented:true},{id:"雅房3",rent:8500,rented:true}], parking:[{rent:2000,rented:true}] },
+      { f:"4F", type:"整層", rent:36000, rented:false, parking:[{rent:2000,rented:true}] },
+      { f:"5F", type:"分租", suites:[{id:"套房1",rent:11500,rented:false}], rooms:[{id:"雅房1",rent:8500,rented:false},{id:"雅房2",rent:8500,rented:false},{id:"雅房3",rent:8500,rented:false}], parking:[{rent:2000,rented:true}] },
+      { f:"6F", type:"分租", suites:[{id:"套房1",rent:11500,rented:true}], rooms:[{id:"雅房1",rent:8500,rented:true},{id:"雅房2",rent:8500,rented:true},{id:"雅房3",rent:8500,rented:true}], parking:[{rent:2000,rented:true}] },
+      { f:"7F", type:"整層", rent:36000, rented:false, parking:[{rent:2000,rented:false}] }
+    ],
+    extraParking:[{id:"特大P",rent:3500,rented:false}]
+  },
+  青雲路1: { type:"透天", rent:66000, rented:true },
+  青雲路2: { type:"店面", rent:36000, rented:true }
+};
+
+// ── TAX PARAMS（可調整）────────────────────────────────────────────────────
+const params = {
+  // 房屋稅
+  xan_assessed:    { label:"興安 評定現值(萬)", val:180, unit:"萬" },
+  xan_road_rate:   { label:"興安 路段率", val:2.10, unit:"" },
+  xan_house_rate:  { label:"興安 房屋稅率", val:0.024, unit:"" },
+
+  amj_assessed:    { label:"愛買各層 評定現值(萬)", val:80, unit:"萬" },
+  amj_road_rate:   { label:"愛買 路段率", val:1.30, unit:"" },
+  amj_house_rate:  { label:"愛買 房屋稅率", val:0.024, unit:"" },
+
+  qy_t_assessed:   { label:"青雲透天 評定現值(萬)", val:120, unit:"萬" },
+  qy_s_assessed:   { label:"青雲店面 評定現值(萬)", val:60, unit:"萬" },
+  qy_road_rate:    { label:"青雲 路段率", val:1.05, unit:"" },
+  qy_house_rate:   { label:"青雲 房屋稅率", val:0.024, unit:"" },
+
+  // 地價稅（公告地價×面積×持分×稅率，這裡用簡化：每坪公告地價×坪數×稅率）
+  xan_land_price:  { label:"興安 公告地價(萬/坪)", val:60, unit:"萬" },
+  xan_land_rate:   { label:"興安 地價稅率", val:0.010, unit:"" },
+
+  amj_land_price:  { label:"愛買 公告地價(萬/坪)", val:40, unit:"萬" },
+  amj_land_rate:   { label:"愛買 地價稅率", val:0.015, unit:"" },
+
+  qy_land_price:   { label:"青雲 公告地價(萬/坪)", val:15, unit:"萬" },
+  qy_land_rate:    { label:"青雲 地價稅率", val:0.010, unit:"" },
+
+  // 租賃所得稅
+  income_deduction:{ label:"費用扣除率", val:0.43, unit:"" },
+  income_tax_rate: { label:"綜所稅率", val:0.20, unit:"" },
+};
+
+// ── LAND AREAS（坪）───────────────────────────────────────────────────────
+const landAreas = {
+  xan: 2,
+  amj_per_floor: 6.35,
+  amj_floors: 7,
+  qy_t: 22.56,
+  qy_s: 9.38
+};
+
+// ── INCOME ────────────────────────────────────────────────────────────────
+function calcMonthlyIncome() {
+  let m = 0;
+  const xan = state["興安國宅"];
+  xan.suites.forEach(x => { if(x.rented) m += x.rent; });
+  xan.rooms.forEach(x => { if(x.rented) m += x.rent; });
+  xan.parking.forEach(x => { if(x.rented) m += x.rent; });
+
+  const amj = state["愛買嘉年華"];
+  amj.floors.forEach(f => {
+    if(f.type==="整層") { if(f.rented) m += f.rent; }
+    else {
+      (f.suites||[]).forEach(x => { if(x.rented) m += x.rent; });
+      (f.rooms||[]).forEach(x => { if(x.rented) m += x.rent; });
+    }
+    (f.parking||[]).forEach(x => { if(x.rented) m += x.rent; });
+  });
+  amj.extraParking.forEach(x => { if(x.rented) m += x.rent; });
+
+  if(state["青雲路1"].rented) m += state["青雲路1"].rent;
+  if(state["青雲路2"].rented) m += state["青雲路2"].rent;
+  return m;
+}
+
+// ── TAX CALC ──────────────────────────────────────────────────────────────
+function calcTaxes() {
+  const p = {};
+  Object.keys(params).forEach(k => p[k] = parseFloat(params[k].val) || 0);
+
+  // 房屋稅（年繳）
+  const xan_house = p.xan_assessed * 10000 * p.xan_road_rate * p.xan_house_rate;
+  const amj_house = p.amj_assessed * 10000 * p.amj_road_rate * p.amj_house_rate * landAreas.amj_floors;
+  const qy_t_house = p.qy_t_assessed * 10000 * p.qy_road_rate * p.qy_house_rate;
+  const qy_s_house = p.qy_s_assessed * 10000 * p.qy_road_rate * p.qy_house_rate;
+  const total_house = xan_house + amj_house + qy_t_house + qy_s_house;
+
+  // 地價稅（年繳）
+  const xan_land = p.xan_land_price * 10000 * landAreas.xan * p.xan_land_rate;
+  const amj_land = p.amj_land_price * 10000 * landAreas.amj_per_floor * landAreas.amj_floors * p.amj_land_rate;
+  const qy_t_land = p.qy_land_price * 10000 * landAreas.qy_t * p.qy_land_rate;
+  const qy_s_land = p.qy_land_price * 10000 * landAreas.qy_s * p.qy_land_rate;
+  const total_land = xan_land + amj_land + qy_t_land + qy_s_land;
+
+  // 租賃所得稅（年繳）
+  const annual_income = calcMonthlyIncome() * 12;
+  const taxable = annual_income * (1 - p.income_deduction);
+  const income_tax = taxable * p.income_tax_rate;
+
+  return {
+    house: { xan: xan_house, amj: amj_house, qy_t: qy_t_house, qy_s: qy_s_house, total: total_house },
+    land:  { xan: xan_land,  amj: amj_land,  qy_t: qy_t_land,  qy_s: qy_s_land,  total: total_land  },
+    income_tax, taxable, annual_income,
+    grand_total: total_house + total_land + income_tax
+  };
+}
+
+// ── FORMAT ────────────────────────────────────────────────────────────────
+function fmt(n) { return Math.round(n).toLocaleString(); }
+function fmtW(n) { return (n/10000).toFixed(1) + '萬'; }
+
+// ── RENDER PROPS ──────────────────────────────────────────────────────────
+function renderProps() {
+  const el = document.getElementById("props-row");
+  let html = '';
+
+  // 興安國宅
+  const xan = state["興安國宅"];
+  html += `<div class="prop-block">
+    <div class="prop-title">興安國宅</div>
+    <div class="prop-meta">南京復興 · RC · 路段率210%</div>
+    <div class="floors-col">`;
+  xan.suites.forEach((s,i) => {
+    html += `<div class="floor-row ${s.rented?'rented':'vacant'}">
+      <span class="floor-label">套房</span>
+      <span class="floor-info">$${fmt(s.rent)}</span>
+      <button class="toggle-btn ${s.rented?'on':'off'}" onclick="toggleXanSuite(${i})">${s.rented?'出租中':'空置'}</button>
+    </div>`;
+  });
+  xan.rooms.forEach((r,i) => {
+    html += `<div class="floor-row ${r.rented?'rented':'vacant'}">
+      <span class="floor-label">${r.id}</span>
+      <span class="floor-info">$${fmt(r.rent)}</span>
+      <button class="toggle-btn ${r.rented?'on':'off'}" onclick="toggleXanRoom(${i})">${r.rented?'出租中':'空置'}</button>
+    </div>`;
+  });
+  html += `</div><div class="parking-row">`;
+  xan.parking.forEach((p,i) => {
+    html += `<div class="park-slot">
+      <div class="park-icon ${p.rented?'on':'off'}">P</div>
+      <span>$${fmt(p.rent)}</span>
+      <button class="park-toggle ${p.rented?'on':'off'}" onclick="toggleXanPark(${i})">${p.rented?'出租':'空置'}</button>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // 愛買嘉年華
+  const amj = state["愛買嘉年華"];
+  html += `<div class="prop-block">
+    <div class="prop-title">愛買嘉年華</div>
+    <div class="prop-meta">板橋亞東 · RC · 路段率130%</div>
+    <div class="floors-col">`;
+  amj.floors.forEach((fl,fi) => {
+    const isRented = fl.type==="整層" ? fl.rented : ((fl.suites||[]).every(s=>s.rented)&&(fl.rooms||[]).every(r=>r.rented));
+    const partial  = fl.type!=="整層" && !isRented && ((fl.suites||[]).some(s=>s.rented)||(fl.rooms||[]).some(r=>r.rented));
+    html += `<div class="floor-row ${isRented||partial?'rented':'vacant'} floor-row-multi">
+      <div class="floor-row-header">
+        <span class="floor-label">${fl.f}</span>
+        <span class="floor-info">${fl.type==="整層"?'整層 $'+fmt(fl.rent):'分租'}</span>`;
+    if(fl.type==="整層") html += `<button class="toggle-btn ${fl.rented?'on':'off'}" onclick="toggleAmjFloor(${fi})">${fl.rented?'出租中':'空置'}</button>`;
+    html += `</div>`;
+    if(fl.type==="分租") {
+      html += `<div class="room-chips">`;
+      (fl.suites||[]).forEach((s,si) => {
+        html += `<span class="chip ${s.rented?'on':'off'}" onclick="toggleAmjSuite(${fi},${si})">${s.id} $${fmt(s.rent)} ${s.rented?'✓':'✕'}</span>`;
+      });
+      (fl.rooms||[]).forEach((r,ri) => {
+        html += `<span class="chip ${r.rented?'on':'off'}" onclick="toggleAmjRoom(${fi},${ri})">${r.id} $${fmt(r.rent)} ${r.rented?'✓':'✕'}</span>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  });
+  html += `</div><div class="parking-row">`;
+  amj.floors.forEach((fl,fi) => {
+    (fl.parking||[]).forEach((p,pi) => {
+      html += `<div class="park-slot">
+        <div class="park-icon ${p.rented?'on':'off'}">P</div>
+        <span>${fl.f} $${fmt(p.rent)}</span>
+        <button class="park-toggle ${p.rented?'on':'off'}" onclick="toggleAmjPark(${fi},${pi})">${p.rented?'出租':'空置'}</button>
+      </div>`;
+    });
+  });
+  amj.extraParking.forEach((p,i) => {
+    html += `<div class="park-slot">
+      <div class="park-icon ${p.rented?'on':'off'}">P+</div>
+      <span>特大 $${fmt(p.rent)}</span>
+      <button class="park-toggle ${p.rented?'on':'off'}" onclick="toggleAmjExtra(${i})">${p.rented?'出租':'空置'}</button>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // 青雲路1
+  const qy1 = state["青雲路1"];
+  html += `<div class="prop-block">
+    <div class="prop-title">青雲路透天</div>
+    <div class="prop-meta">土城 · 加強磚造 · 路段率105%</div>
+    <div class="floors-col">
+      <div class="floor-row ${qy1.rented?'rented':'vacant'}">
+        <span class="floor-label">${qy1.type}</span>
+        <span class="floor-info">$${fmt(qy1.rent)}</span>
+        <button class="toggle-btn ${qy1.rented?'on':'off'}" onclick="toggleQY1()">${qy1.rented?'出租中':'空置'}</button>
+      </div>
+    </div>
+    <div class="parking-row"><div style="color:var(--dim);font-size:9px">無停車位</div></div>
+  </div>`;
+
+  // 青雲路2
+  const qy2 = state["青雲路2"];
+  html += `<div class="prop-block">
+    <div class="prop-title">青雲路店面</div>
+    <div class="prop-meta">土城 · 加強磚造 · 路段率105%</div>
+    <div class="floors-col">
+      <div class="floor-row ${qy2.rented?'rented':'vacant'}">
+        <span class="floor-label">${qy2.type}</span>
+        <span class="floor-info">$${fmt(qy2.rent)}</span>
+        <button class="toggle-btn ${qy2.rented?'on':'off'}" onclick="toggleQY2()">${qy2.rented?'出租中':'空置'}</button>
+      </div>
+    </div>
+    <div class="parking-row"><div style="color:var(--dim);font-size:9px">無停車位</div></div>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+// ── RENDER INCOME ─────────────────────────────────────────────────────────
+function renderIncome() {
+  const monthly = calcMonthlyIncome();
+  const yearly  = monthly * 12;
+  const taxes   = calcTaxes();
+  const profit  = yearly - taxes.grand_total;
+
+  document.getElementById("income-bar").innerHTML = `
+    <div class="sum-card">
+      <div class="sum-label">月收入</div>
+      <div class="sum-val">$${fmt(monthly)}</div>
+      <div class="sum-unit">新台幣 / 月</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">年收入</div>
+      <div class="sum-val">$${fmt(yearly)}</div>
+      <div class="sum-unit">新台幣 / 年</div>
+    </div>
+    <div class="sum-card highlight">
+      <div class="sum-label">稅後利潤</div>
+      <div class="sum-val profit">$${fmt(profit)}</div>
+      <div class="sum-unit">年收入 − 總稅額</div>
+    </div>`;
+}
+
+// ── RENDER TAX DETAIL ─────────────────────────────────────────────────────
+function renderTaxDetail() {
+  const t = calcTaxes();
+  document.getElementById("tax-grid").innerHTML = `
+    <div class="tax-card">
+      <div class="tax-card-title">🏠 房屋稅（年）</div>
+      <div class="tax-row"><span class="tax-row-label">興安國宅</span><span class="tax-row-val warn">${fmtW(t.house.xan)}</span></div>
+      <div class="tax-row"><span class="tax-row-label">愛買嘉年華（7層）</span><span class="tax-row-val warn">${fmtW(t.house.amj)}</span></div>
+      <div class="tax-row"><span class="tax-row-label">青雲路透天</span><span class="tax-row-val warn">${fmtW(t.house.qy_t)}</span></div>
+      <div class="tax-row"><span class="tax-row-label">青雲路店面</span><span class="tax-row-val warn">${fmtW(t.house.qy_s)}</span></div>
+      <div class="tax-total"><span class="tax-total-label">小計</span><span class="tax-total-val">${fmtW(t.house.total)}</span></div>
+    </div>
+    <div class="tax-card">
+      <div class="tax-card-title">🌱 地價稅（年）</div>
+      <div class="tax-row"><span class="tax-row-label">興安 2坪</span><span class="tax-row-val warn">${fmtW(t.land.xan)}</span></div>
+      <div class="tax-row"><span class="tax-row-label">愛買 6.35坪×7層</span><span class="tax-row-val warn">${fmtW(t.land.amj)}</span></div>
+      <div class="tax-row"><span class="tax-row-label">青雲透天 22.56坪</span><span class="tax-row-val warn">${fmtW(t.land.qy_t)}</span></div>
+      <div class="tax-row"><span class="tax-row-label">青雲店面 9.38坪</span><span class="tax-row-val warn">${fmtW(t.land.qy_s)}</span></div>
+      <div class="tax-total"><span class="tax-total-label">小計</span><span class="tax-total-val">${fmtW(t.land.total)}</span></div>
+    </div>
+    <div class="tax-card">
+      <div class="tax-card-title">📋 租賃所得稅（年）</div>
+      <div class="tax-row"><span class="tax-row-label">年租金收入</span><span class="tax-row-val">${fmtW(t.annual_income)}</span></div>
+      <div class="tax-row"><span class="tax-row-label">扣除必要費用43%後</span><span class="tax-row-val">${fmtW(t.taxable)}</span></div>
+      <div class="tax-row"><span class="tax-row-label">適用綜所稅率</span><span class="tax-row-val">${(parseFloat(params.income_tax_rate.val)*100).toFixed(0)}%</span></div>
+      <div class="tax-total"><span class="tax-total-label">所得稅</span><span class="tax-total-val">${fmtW(t.income_tax)}</span></div>
+    </div>`;
+
+  const monthly = calcMonthlyIncome();
+  const yearly  = monthly * 12;
+  const profit  = yearly - t.grand_total;
+  const rate    = yearly > 0 ? ((t.grand_total/yearly)*100).toFixed(1) : 0;
+  const pRate   = yearly > 0 ? ((profit/yearly)*100).toFixed(1) : 0;
+
+  document.getElementById("profit-section").innerHTML = `
+    <div class="profit-section">
+      <div class="profit-equation">
+        <div class="eq-block">
+          <div class="eq-label">年收入</div>
+          <div class="eq-val income">$${fmt(yearly)}</div>
+        </div>
+        <div class="eq-op">−</div>
+        <div class="eq-block">
+          <div class="eq-label">總稅額（估算）</div>
+          <div class="eq-val tax">${fmtW(t.grand_total)}</div>
+          <div class="eq-rate">佔年收入 ${rate}%</div>
+        </div>
+        <div class="eq-op">=</div>
+        <div class="eq-block">
+          <div class="eq-label">稅後利潤</div>
+          <div class="eq-val profit">$${fmt(profit)}</div>
+          <div class="eq-rate">留存率 ${pRate}%</div>
+        </div>
+        <div style="margin-left:auto;text-align:right;">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">稅額拆分</div>
+          <div style="font-size:10px;color:var(--txt2);font-family:var(--font-mono);">
+            房屋稅 ${fmtW(t.house.total)}<br>
+            地價稅 ${fmtW(t.land.total)}<br>
+            所得稅 ${fmtW(t.income_tax)}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── RENDER PARAMS ─────────────────────────────────────────────────────────
+function renderParams() {
+  let html = '';
+  Object.keys(params).forEach(k => {
+    html += `<div class="param-item">
+      <div class="param-label">${params[k].label}</div>
+      <input class="param-input" type="number" step="any" value="${params[k].val}"
+        oninput="updateParam('${k}', this.value)">
+    </div>`;
+  });
+  document.getElementById("params-grid").innerHTML = html;
+}
+
+function updateParam(key, val) {
+  params[key].val = val;
+  renderIncome();
+  renderTaxDetail();
+}
+
+// ── TOGGLES ───────────────────────────────────────────────────────────────
+function toggleTaxDetail() {
+  const el = document.getElementById("tax-detail");
+  const btn = document.querySelector(".tax-toggle-btn");
+  if(el.style.display==="none") {
+    el.style.display="block";
+    btn.textContent="收起明細 ▴";
+    renderTaxDetail();
+  } else {
+    el.style.display="none";
+    btn.textContent="展開明細 ▾";
+  }
+}
+
+function toggleParams() {
+  const el = document.getElementById("params-body");
+  const hd = document.getElementById("params-toggle");
+  if(el.style.display==="none") {
+    el.style.display="block";
+    hd.classList.add("open");
+    renderParams();
+  } else {
+    el.style.display="none";
+    hd.classList.remove("open");
+  }
+}
+
+function toggleXanSuite(i) { state["興安國宅"].suites[i].rented=!state["興安國宅"].suites[i].rented; renderAll(); }
+function toggleXanRoom(i)  { state["興安國宅"].rooms[i].rented=!state["興安國宅"].rooms[i].rented; renderAll(); }
+function toggleXanPark(i)  { state["興安國宅"].parking[i].rented=!state["興安國宅"].parking[i].rented; renderAll(); }
+function toggleAmjFloor(fi){ state["愛買嘉年華"].floors[fi].rented=!state["愛買嘉年華"].floors[fi].rented; renderAll(); }
+function toggleAmjSuite(fi,si){ state["愛買嘉年華"].floors[fi].suites[si].rented=!state["愛買嘉年華"].floors[fi].suites[si].rented; renderAll(); }
+function toggleAmjRoom(fi,ri){ state["愛買嘉年華"].floors[fi].rooms[ri].rented=!state["愛買嘉年華"].floors[fi].rooms[ri].rented; renderAll(); }
+function toggleAmjPark(fi,pi){ state["愛買嘉年華"].floors[fi].parking[pi].rented=!state["愛買嘉年華"].floors[fi].parking[pi].rented; renderAll(); }
+function toggleAmjExtra(i) { state["愛買嘉年華"].extraParking[i].rented=!state["愛買嘉年華"].extraParking[i].rented; renderAll(); }
+function toggleQY1()       { state["青雲路1"].rented=!state["青雲路1"].rented; renderAll(); }
+function toggleQY2()       { state["青雲路2"].rented=!state["青雲路2"].rented; renderAll(); }
+
+function renderAll() {
+  renderProps();
+  renderIncome();
+  renderTaxDetail();
+  // 如果明細是開著的，重新渲染
+  if(document.getElementById("tax-detail").style.display!=="none") renderTaxDetail();
+}
+
+renderAll();
+</script>
+</body>
+</html>
